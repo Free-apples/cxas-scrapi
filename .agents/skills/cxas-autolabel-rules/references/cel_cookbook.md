@@ -24,25 +24,27 @@ In CEL expressions, the root `conversation` variable provides direct access to t
 ```mermaid
 graph TD
     Conv["conversation (Conversation)"]
-    Conv --> Meta["Top-level Metadata<br/>agentId, languageCode, medium,<br/>duration, turnCount, startTime"]
+    Conv --> Meta["Top-level Metadata<br/>agentId, languageCode, medium,<br/>duration, turnCount, startTime, labels"]
     Conv --> CallMeta["callMetadata<br/>customerChannel, agentChannel"]
-    Conv --> Runtime["runtimeInputs / dialogflowRuntimeMetadata<br/>sessionParams, entrySubagentId, subagents, flows"]
-    Conv --> Annotations["runtimeAnnotations[]<br/>cesTurnAnnotation.messages[].chunks[]<br/>(toolResponse, toolCall, text)"]
+    Conv --> QualityMeta["qualityMetadata<br/>agentInfo[].entrySubagentDisplayName"]
+    Conv --> Annotations["runtimeAnnotations[]<br/>cesTurnAnnotation.messages[].chunks[]<br/>(toolResponse, toolCall, agentTransfer)"]
+    Conv --> Functions["Built-in CEL Functions<br/>get_session_params(key), get_label(key)<br/>get_last_subagent(), get_last_subagent_id()"]
     Conv --> Transcript["transcript<br/>transcriptSegments[]<br/>(text, role, sentiment, words, channelTag)"]
     Conv --> Analysis["latestAnalysis<br/>analysisResult.callAnalysisMetadata<br/>(sentiments, silence, issueModelResult, qaScorecardResults)"]
 ```
 
 ### 2.1 Top-Level Attributes
 
-| Field Path                  | Type               | Description                                                   | CEL Example                                                  |
-| --------------------------- | ------------------ | ------------------------------------------------------------- | ------------------------------------------------------------ |
-| `conversation.name`         | `string`           | Full resource name (`projects/*/locations/*/conversations/*`) | `conversation.name.endsWith('/conv123')`                     |
-| `conversation.agentId`      | `string`           | Identifier of virtual agent / CXAS app / bot                  | `conversation.agentId == 'billing_bot'`                      |
-| `conversation.languageCode` | `string`           | BCP-47 language tag                                           | `conversation.languageCode == 'es-US'`                       |
-| `conversation.medium`       | `enum` / `int`     | `1` (PHONE_CALL), `2` (CHAT), `0` (UNSPECIFIED)               | `conversation.medium == 1`                                   |
-| `conversation.duration`     | `duration` / `int` | Total interaction duration (seconds)                          | `conversation.duration > 300`                                |
-| `conversation.turnCount`    | `int`              | Total number of conversational turns                          | `conversation.turnCount >= 10`                               |
-| `conversation.startTime`    | `timestamp`        | Start timestamp of interaction                                | `conversation.startTime > timestamp('2026-01-01T00:00:00Z')` |
+| Field Path                  | Type                  | Description                                                   | CEL Example                                                  |
+| --------------------------- | --------------------- | ------------------------------------------------------------- | ------------------------------------------------------------ |
+| `conversation.name`         | `string`              | Full resource name (`projects/*/locations/*/conversations/*`) | `conversation.name.endsWith('/conv123')`                     |
+| `conversation.agentId`      | `string`              | Identifier of virtual agent / CXAS app / bot                  | `conversation.agentId == 'billing_bot'`                      |
+| `conversation.languageCode` | `string`              | BCP-47 language tag                                           | `conversation.languageCode == 'es-US'`                       |
+| `conversation.medium`       | `enum` / `int`        | `1` (PHONE_CALL), `2` (CHAT), `0` (UNSPECIFIED)               | `conversation.medium == 1`                                   |
+| `conversation.duration`     | `duration` / `int`    | Total interaction duration (seconds)                          | `conversation.duration > 300`                                |
+| `conversation.turnCount`    | `int`                 | Total number of conversational turns                          | `conversation.turnCount >= 10`                               |
+| `conversation.startTime`    | `timestamp`           | Start timestamp of interaction                                | `conversation.startTime > timestamp('2026-01-01T00:00:00Z')` |
+| `conversation.labels`       | `map[string, string]` | Custom key-value labels set on the conversation               | `conversation.labels['auth_status'] == 'verified'`          |
 
 ______________________________________________________________________
 
@@ -57,16 +59,18 @@ Defined by `message CallMetadata`:
 
 ______________________________________________________________________
 
-### 2.3 Runtime Session Parameters & Dialogflow Metadata
+### 2.3 Runtime Session Parameters & Sub-Agent Metadata
 
-Defined by `runtimeInputs` and `dialogflowRuntimeMetadata`:
+In CCAI Insights, dynamic session parameters and sub-agent routing are exposed in CEL via **built-in CEL functions** that inspect `runtimeAnnotations` (Dialogflow intent parameters and CES/GECX `updated_variables`):
 
-| Field Path                                               | Type                  | Description                                             | CEL Example                                                               |
-| -------------------------------------------------------- | --------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `conversation.runtimeInputs.sessionParams`               | `map[string, string]` | Dynamic session parameters from CXAS/Dialogflow session | `conversation.runtimeInputs.sessionParams['auth_status'] == 'verified'`   |
-| `conversation.dialogflowRuntimeMetadata.entrySubagentId` | `string`              | First sub-agent entered during interaction              | `conversation.dialogflowRuntimeMetadata.entrySubagentId == 'onboarding'`  |
-| `conversation.dialogflowRuntimeMetadata.subagents`       | `list[string]`        | All sub-agents visited during the conversation          | `conversation.dialogflowRuntimeMetadata.subagents.contains('payment_v2')` |
-| `conversation.dialogflowRuntimeMetadata.flows`           | `list[string]`        | All flows executed                                      | `conversation.dialogflowRuntimeMetadata.flows.contains('refund_flow')`    |
+| Expression / Function                                       | Return Type | Description                                                                        | CEL Example                                                    |
+| ----------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `get_session_params('param_key')`                           | `string`    | Retrieves a session parameter or CES updated variable from runtime annotations     | `get_session_params('auth_status') == 'verified'`              |
+| `get_label('label_key')`                                    | `string`    | Retrieves a custom label value (equivalent to `conversation.labels[key]`)          | `get_label('tier') == 'vip'`                                   |
+| `get_last_subagent()`                                       | `string`    | Returns the display name of the last sub-agent traversed in the conversation       | `get_last_subagent() == 'billing_specialist'`                  |
+| `get_last_subagent_id()`                                    | `string`    | Returns the resource ID of the last sub-agent traversed in the conversation        | `get_last_subagent_id() == 'billing_v2'`                       |
+| `conversation.qualityMetadata.agentInfo[0].entrySubagentDisplayName` | `string` | Display name of the entry sub-agent                                                | `conversation.qualityMetadata.agentInfo[0].entrySubagentDisplayName == 'onboarding'` |
+| `conversation.qualityMetadata.agentInfo[0].entrySubagentId` | `string`    | ID of the entry sub-agent                                                          | `conversation.qualityMetadata.agentInfo[0].entrySubagentId == 'entry_flow'` |
 
 ______________________________________________________________________
 
