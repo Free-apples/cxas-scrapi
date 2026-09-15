@@ -8,32 +8,48 @@ This reference guide provides a complete specification of the mirrored **`conver
 
 The `conversations` table provides a denormalized, queryable record for each processed customer conversation in CCAI Insights.
 
-| Column Name | Data Type | Mode | Description | Example Values |
-| :--- | :--- | :--- | :--- | :--- |
-| `conversation_id` | `STRING` | `REQUIRED` | Unique identifier for the conversation resource (`projects/*/locations/*/conversations/*`). | `"conv-89412a-45b7"` |
-| `project_id` | `STRING` | `REQUIRED` | Google Cloud project ID hosting the CCAI Insights dataset. | `"my-cx-project"` |
-| `location` | `STRING` | `REQUIRED` | Google Cloud region where the conversation is stored. | `"us-central1"`, `"global"` |
-| `start_time` | `TIMESTAMP` | `REQUIRED` | The timestamp when the conversation began (call connect or session start). | `2026-08-26 14:30:00 UTC` |
-| `end_time` | `TIMESTAMP` | `NULLABLE` | The timestamp when the conversation ended. | `2026-08-26 14:38:15 UTC` |
-| `duration_seconds` | `FLOAT64` | `NULLABLE` | Total duration of the conversation in seconds (`end_time - start_time`). | `495.0`, `120.5` |
-| `agent_id` | `STRING` | `NULLABLE` | Identifier or user ID of the primary human or virtual agent. | `"agent_sarah_102"`, `"billing-bot-v2"` |
-| `agent_name` | `STRING` | `NULLABLE` | Display name of the agent assigned to or handling the conversation. | `"Sarah Jenkins"`, `"Virtual Assistant"` |
-| `agent_type` | `STRING` | `NULLABLE` | Category of the agent handling the interaction: `VIRTUAL_AGENT`, `HUMAN_AGENT`, or `HYBRID`. | `"VIRTUAL_AGENT"` |
-| `medium` | `STRING` | `NULLABLE` | Communication channel/medium: `PHONE_CALL`, `CHAT`, `SMS`, `EMAIL`. | `"PHONE_CALL"`, `"CHAT"` |
-| `language_code` | `STRING` | `NULLABLE` | BCP-47 language tag detected or configured for the interaction. | `"en-US"`, `"es-US"`, `"fr-CA"` |
-| `turn_count` | `INT64` | `NULLABLE` | Total number of conversational dialogue turns between customer and agent. | `14`, `28` |
-| `sentiment_category` | `STRING` | `NULLABLE` | Overall customer sentiment classification: `POSITIVE`, `NEUTRAL`, `NEGATIVE`. | `"NEGATIVE"`, `"POSITIVE"` |
-| `sentiment_score` | `FLOAT64` | `NULLABLE` | Numerical sentiment score ranging from `-1.0` (very negative) to `+1.0` (very positive). | `-0.65`, `0.82` |
-| `sentiment_magnitude` | `FLOAT64` | `NULLABLE` | Magnitude / emotional strength of the sentiment (ranges from `0.0` to `+inf`). | `3.4`, `0.8` |
-| `issue_category` | `STRING` | `NULLABLE` | Primary topic model cluster or issue category identified by CCAI Insights. | `"Billing & Invoicing"`, `"Password Reset"` |
-| `issue_subcategory` | `STRING` | `NULLABLE` | Granular issue subtype or sub-intent cluster. | `"Overcharge Dispute"`, `"Account Unlock"` |
-| `summary` | `STRING` | `NULLABLE` | Generative AI conversation summary (executive summary of customer intent, action, and resolution). | `"Customer called regarding fee waiver..."` |
-| `qa_score` | `FLOAT64` | `NULLABLE` | Overall Scorecard QA evaluation score (percentage normalized `0.0` - `1.0` or `0` - `100`). | `0.92`, `85.0` |
-| `compliance_violation` | `BOOL` | `NULLABLE` | Boolean flag indicating whether a compliance or critical scorecard rule was violated. | `TRUE`, `FALSE` |
-| `labels` | `STRING` | `NULLABLE` | Comma-separated or formatted string containing conversation metadata and autolabel keys. | `"tier=vip,escalated=true,region=west"` |
-| `silence_percentage` | `FLOAT64` | `NULLABLE` | Percentage of call duration consisting of silence / dead air (`0.0` to `100.0`). | `12.5` |
-| `interruption_count` | `INT64` | `NULLABLE` | Number of times participants spoke simultaneously / interrupted each other. | `3`, `0` |
-| `hold_duration_seconds` | `FLOAT64` | `NULLABLE` | Total duration customer spent on hold across all hold events. | `45.0`, `0.0` |
+Find the column definitions in the following table.
+
+|  Name  |  Type  |  Definition |
+| ---- | ---- | --------- |
+| conversation_id | STRING (NULLABLE) | Unique identifier of the conversation resource. |
+| conversation_create_time | TIMESTAMP (NULLABLE) | Ingestion timestamp when the conversation was loaded into Insights. |
+| conversation_update_time | TIMESTAMP (NULLABLE) | Timestamp of the last mutation (update) on the conversation. |
+| conversation_start_time | TIMESTAMP (NULLABLE) | Timestamp when the conversation originally occurred. |
+| conversation_expiry_time | TIMESTAMP (NULLABLE) | Timestamp when the conversation is scheduled for deletion under TTL. |
+| conversation_export_time | TIMESTAMP (NULLABLE) | Timestamp when the record was written to {{bigquery_name}}. |
+| conversation_ccai_data_source | RECORD (NULLABLE) | Source mapping (contains dialogflow_conversation resource path). |
+| latest_analysis_time | TIMESTAMP (NULLABLE) | Timestamp of the most recent NLP / QM analysis execution. |
+| turn_count | INTEGER (NULLABLE) | Total number of conversational turns. |
+| duration_nanos | INTEGER (NULLABLE) | Total conversation duration in nanoseconds. |
+| silence_percentage | FLOAT (NULLABLE) | Percentage of call duration spent in silence / dead air. |
+| agent_sentiment_score | FLOAT (NULLABLE) | Overall agent sentiment score (range: -1.0 to +1.0). |
+| client_sentiment_score | FLOAT (NULLABLE) | Overall client sentiment score (range: -1.0 to +1.0). |
+| customer_satisfaction_rating | INTEGER (NULLABLE) | Explicit Customer Satisfaction rating (CSAT). |
+| client_sentiment_data | RECORD (NULLABLE) | Turn sentiment trajectory (e.g. exponential_moving_average_of_client_turn_sentiment_score). |
+| issue_dimension_metadata | RECORD (REPEATED) | Issue model topic assignments (issue_id, issue_display_name, issue_model_id). |
+| agent_dimension_metadata | RECORD (REPEATED) | Metadata on human or automated agents (agent_id, agent_display_name, agent_team, agent_type, deployment_id, version_id). |
+| end_user_dimension_metadata | RECORD (NULLABLE) | End-user identifiers (obfuscated_external_user_id, end_user_info). |
+| qa_scorecard_results | RECORD (REPEATED) | Quality Management scorecard results, question answers, scores, and tag results. |
+| correlation_info | RECORD (NULLABLE) | Multi-segment call correlation & stitching IDs (full_conversation_correlation_id, correlation_types). |
+| medium | STRING (NULLABLE) | Communication channel (PHONE_CALL, CHAT). |
+| custom_labels | RECORD (REPEATED) | Customer-defined metadata key-value pairs (label_key, label_value). |
+| knowledge_search_results | RECORD (REPEATED) | Generative Knowledge Assist (GKA) search annotations, citations, URLs, and feedback. |
+| knowledge_assist_results | RECORD (REPEATED) | Proactive Knowledge Assist (PGKA) suggestions, source documents, click feedback, and dismissals. |
+| dialogflow_conversation_profile_id | STRING (NULLABLE) | {{dialogflow_name}} conversation profile ID. |
+| summarization_results | RECORD (REPEATED) | Summaries, agent feedback summaries, edit distance insertions/deletions, and generator flags. |
+| smart_reply_results | RECORD (REPEATED) | Smart Reply suggestions, display status, and click events. |
+| dialogflow_interaction_data | RECORD (REPEATED) | Per-turn interaction details (intents, match types, webhooks, tool latencies, LLM/TTS latencies, end-to-end latency). |
+| dialogflow_interaction_aggregated_metadata | RECORD (NULLABLE) | Aggregated interaction flags (contains_live_agent_handoff). |
+| conversational_agent_tool_data | RECORD (REPEATED) | Conversation-level tool aggregation (cumulative_latency_ms, successful_invocation_count, total_invocation_count). |
+| conversational_agent_playbook_data | RECORD (REPEATED) | Conversation-level playbook usage (playbook_id, display_name). |
+| ai_coach_results | RECORD (REPEATED) | Real-time AI Agent Coaching suggestions, triggers, tool calls, and agent adoption. |
+| total_customer_message_count | INTEGER (NULLABLE) | Total count of messages sent by the customer. |
+| total_agent_message_count | INTEGER (NULLABLE) | Total count of messages sent by the agent. |
+| aa_supervisor_monitoring_status | RECORD (NULLABLE) | {{agent_assist_name}} supervisor monitoring state, supervisor ID/username, and escalation events. |
+| ccai_transcription_metadata | RECORD (NULLABLE) | {{speech_name}} configuration (language code, alternative languages, STT model, phrase sets). |
+| user_agent_interaction_events | RECORD (REPEATED) | Detailed participant event log with timestamps and roles. |
+| user_agent_interaction_histogram | RECORD (REPEATED) | Interaction time interval windows (start_time, end_time). |
 
 ---
 
@@ -46,16 +62,16 @@ The `conversations` table provides a denormalized, queryable record for each pro
 SELECT
   COUNT(DISTINCT conversation_id) AS total_conversations
 FROM conversations
-WHERE start_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
+WHERE conversation_start_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
 ```
 
 #### Hourly Call Volume Heatmap / Distribution (Bar Chart)
 ```sql
 SELECT
-  EXTRACT(HOUR FROM start_time) AS hour_of_day,
+  EXTRACT(HOUR FROM conversation_start_time) AS hour_of_day,
   COUNT(1) AS call_volume
 FROM conversations
-WHERE start_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+WHERE conversation_start_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
 GROUP BY 1
 ORDER BY hour_of_day ASC
 ```
@@ -78,21 +94,24 @@ ORDER BY volume DESC
 ```sql
 SELECT
   ROUND(SAFE_DIVIDE(
-    COUNTIF(agent_type = 'VIRTUAL_AGENT' AND NOT REGEXP_CONTAINS(COALESCE(labels, ''), '(?i)escalat')),
-    COUNTIF(agent_type = 'VIRTUAL_AGENT' OR REGEXP_CONTAINS(COALESCE(labels, ''), '(?i)virtual_agent'))
+    COUNTIF(
+      EXISTS(SELECT 1 FROM UNNEST(agent_dimension_metadata) WHERE agent_type = 'VIRTUAL_AGENT')
+      AND NOT COALESCE(dialogflow_interaction_aggregated_metadata.contains_live_agent_handoff, FALSE)
+    ),
+    COUNTIF(EXISTS(SELECT 1 FROM UNNEST(agent_dimension_metadata) WHERE agent_type = 'VIRTUAL_AGENT'))
   ) * 100, 1) AS containment_percentage
 FROM conversations
-WHERE start_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
+WHERE conversation_start_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
 ```
 
 #### Daily Escalation Trend (Line Chart)
 ```sql
 SELECT
-  DATE(start_time) AS call_date,
+  DATE(conversation_start_time) AS call_date,
   COUNT(1) AS total_calls,
-  COUNTIF(REGEXP_CONTAINS(COALESCE(labels, ''), '(?i)escalat')) AS escalated_calls,
+  COUNTIF(COALESCE(dialogflow_interaction_aggregated_metadata.contains_live_agent_handoff, FALSE)) AS escalated_calls,
   ROUND(SAFE_DIVIDE(
-    COUNTIF(REGEXP_CONTAINS(COALESCE(labels, ''), '(?i)escalat')),
+    COUNTIF(COALESCE(dialogflow_interaction_aggregated_metadata.contains_live_agent_handoff, FALSE)),
     COUNT(1)
   ) * 100, 1) AS escalation_rate
 FROM conversations
@@ -107,11 +126,11 @@ ORDER BY call_date ASC
 #### Average Handle Time (AHT) in Seconds by Issue Category (Bar Chart)
 ```sql
 SELECT
-  issue_category,
-  ROUND(AVG(duration_seconds), 0) AS avg_duration_sec,
-  ROUND(AVG(hold_duration_seconds), 0) AS avg_hold_sec
-FROM conversations
-WHERE issue_category IS NOT NULL AND duration_seconds > 0
+  issue.issue_display_name AS issue_category,
+  ROUND(AVG(duration_nanos / 1e9), 0) AS avg_duration_sec
+FROM conversations,
+UNNEST(issue_dimension_metadata) AS issue
+WHERE duration_nanos > 0
 GROUP BY 1
 ORDER BY avg_duration_sec DESC
 LIMIT 10
@@ -121,13 +140,13 @@ LIMIT 10
 ```sql
 SELECT
   conversation_id,
-  agent_name,
-  duration_seconds,
+  agent.agent_display_name AS agent_name,
+  ROUND(duration_nanos / 1e9, 0) AS duration_seconds,
   silence_percentage,
-  interruption_count,
-  summary
+  turn_count
 FROM conversations
-WHERE silence_percentage > 25.0 AND duration_seconds > 180
+LEFT JOIN UNNEST(agent_dimension_metadata) AS agent
+WHERE silence_percentage > 25.0 AND (duration_nanos / 1e9) > 180
 ORDER BY silence_percentage DESC
 LIMIT 25
 ```
@@ -139,21 +158,26 @@ LIMIT 25
 #### Customer Sentiment Breakdown (Donut Chart)
 ```sql
 SELECT
-  COALESCE(sentiment_category, 'NEUTRAL') AS sentiment,
+  CASE
+    WHEN client_sentiment_score > 0.25 THEN 'POSITIVE'
+    WHEN client_sentiment_score < -0.25 THEN 'NEGATIVE'
+    ELSE 'NEUTRAL'
+  END AS sentiment_category,
   COUNT(1) AS count,
   ROUND(COUNT(1) * 100.0 / SUM(COUNT(1)) OVER(), 1) AS percentage
 FROM conversations
+WHERE client_sentiment_score IS NOT NULL
 GROUP BY 1
 ORDER BY count DESC
 ```
 
-#### Average Sentiment Score Trend by Agent Group (Line Chart)
+#### Average Sentiment Score Trend by Day (Line Chart)
 ```sql
 SELECT
-  DATE(start_time) AS date,
-  ROUND(AVG(sentiment_score), 2) AS avg_sentiment_score
+  DATE(conversation_start_time) AS date,
+  ROUND(AVG(client_sentiment_score), 2) AS avg_sentiment_score
 FROM conversations
-WHERE sentiment_score IS NOT NULL
+WHERE client_sentiment_score IS NOT NULL
 GROUP BY 1
 ORDER BY date ASC
 ```
@@ -165,24 +189,26 @@ ORDER BY date ASC
 #### Agent QA Scorecard Leaderboard (Table)
 ```sql
 SELECT
-  agent_name,
+  agent.agent_display_name AS agent_name,
   COUNT(1) AS evaluated_conversations,
-  ROUND(AVG(qa_score) * 100, 1) AS average_qa_score,
-  COUNTIF(compliance_violation = TRUE) AS compliance_violations
-FROM conversations
-WHERE agent_name IS NOT NULL AND qa_score IS NOT NULL
+  ROUND(AVG(qa.score) * 100, 1) AS average_qa_score
+FROM conversations,
+UNNEST(agent_dimension_metadata) AS agent,
+UNNEST(qa_scorecard_results) AS qa
+WHERE agent.agent_display_name IS NOT NULL AND qa.score IS NOT NULL
 GROUP BY 1
 HAVING evaluated_conversations >= 5
 ORDER BY average_qa_score DESC
 ```
 
-#### Compliance Violation Rate Over Time (Line / Area Chart)
+#### Low QA Evaluation Trend Over Time (Line / Area Chart)
 ```sql
 SELECT
-  DATE(start_time) AS date,
-  COUNTIF(compliance_violation = TRUE) AS violation_count,
-  ROUND(SAFE_DIVIDE(COUNTIF(compliance_violation = TRUE), COUNT(1)) * 100, 2) AS violation_percentage
-FROM conversations
+  DATE(conversation_start_time) AS date,
+  COUNTIF(qa.score < 0.70) AS low_score_count,
+  ROUND(SAFE_DIVIDE(COUNTIF(qa.score < 0.70), COUNT(1)) * 100, 2) AS low_score_percentage
+FROM conversations,
+UNNEST(qa_scorecard_results) AS qa
 GROUP BY 1
 ORDER BY date ASC
 ```
@@ -194,11 +220,11 @@ ORDER BY date ASC
 #### Top 10 Contact Drivers with Escalation Share (Stacked Bar Chart)
 ```sql
 SELECT
-  issue_category,
+  issue.issue_display_name AS issue_category,
   COUNT(1) AS total_conversations,
-  COUNTIF(REGEXP_CONTAINS(COALESCE(labels, ''), '(?i)escalat')) AS escalated_count
-FROM conversations
-WHERE issue_category IS NOT NULL
+  COUNTIF(COALESCE(dialogflow_interaction_aggregated_metadata.contains_live_agent_handoff, FALSE)) AS escalated_count
+FROM conversations,
+UNNEST(issue_dimension_metadata) AS issue
 GROUP BY 1
 ORDER BY total_conversations DESC
 LIMIT 10
@@ -208,14 +234,15 @@ LIMIT 10
 
 ### 2.7 Autolabels & Custom Metadata Extraction
 
-#### Extracting Autolabel Key-Value Pairs from `labels` String
+#### Extracting Autolabel Key-Value Pairs from `custom_labels` (REPEATED)
 ```sql
 SELECT
-  REGEXP_EXTRACT(labels, r'agent_domain=([^,]+)') AS agent_domain,
+  labels.label_value AS agent_domain,
   COUNT(1) AS total_calls,
-  ROUND(AVG(duration_seconds), 0) AS avg_handle_time
-FROM conversations
-WHERE REGEXP_CONTAINS(COALESCE(labels, ''), r'agent_domain=')
+  ROUND(AVG(duration_nanos / 1e9), 0) AS avg_handle_time_sec
+FROM conversations,
+UNNEST(custom_labels) AS labels
+WHERE labels.label_key = 'agent_domain'
 GROUP BY 1
 ORDER BY total_calls DESC
 ```
@@ -224,7 +251,7 @@ ORDER BY total_calls DESC
 
 ## 3. BigQuery SQL Authoring Guidelines for Configurable Dashboards
 
-1. **Partition Pruning**: Always filter by `start_time` (or use the dashboard-level date range filter) to optimize BigQuery scan cost and dashboard latency.
+1. **Partition Pruning**: Always filter by `conversation_start_time` (or use the dashboard-level date range filter) to optimize BigQuery scan cost and dashboard latency.
 2. **Safe Division**: Use `SAFE_DIVIDE(numerator, denominator)` instead of standard `/` to prevent divide-by-zero runtime exceptions.
 3. **Null Handling**: Wrap string and category fields in `COALESCE(field, 'UNKNOWN')` to avoid orphaned Vega-Lite legend keys.
 4. **Column Naming**: Name SQL projection columns matching the `field` encodings defined in the Vega-Lite `chart_spec` (e.g. `total_conversations`, `call_date`, `avg_qa_score`).
