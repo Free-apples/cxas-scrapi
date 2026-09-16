@@ -1,6 +1,21 @@
 # Changelog
 
 
+## [1.9.1](https://github.com/GoogleCloudPlatform/cxas-scrapi/compare/v1.9.0...v1.9.1) (2026-09-16)
+
+
+### Bug Fixes
+
+* **evals:** emit turn-level variables for every golden turn ([20fdc94](https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/20fdc94133e62aaa41acccc57cc06978d19ec4a1)), closes [#455](https://github.com/GoogleCloudPlatform/cxas-scrapi/issues/455)
+* **skills:** Update cxas-composite-voice-agent-optimizer SKILL to improve use of audio tags for natural speech ([#458](https://github.com/GoogleCloudPlatform/cxas-scrapi/issues/458)) ([8d8b5c6](https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/8d8b5c6655718706c439a18ae6075ac67d58d314))
+
+
+### Documentation
+
+* **autolabel:** replace non-existent runtimeInputs with official get_session_params CEL functions ([45ff3db](https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/45ff3dbdfbfe1d812c866ffff690632533343271))
+* **skills:** correct CCAI Insights conversation schema and CEL field references ([7dc2cda](https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/7dc2cdaa6ba8747b77faf5fa6148fcac424092b7))
+* **skills:** update conversation table schema and SQL cookbook recipes ([6f4f2e8](https://github.com/GoogleCloudPlatform/cxas-scrapi/commit/6f4f2e868a046f07354c2bee4b425bba9f21fd64))
+
 ## [1.9.0](https://github.com/GoogleCloudPlatform/cxas-scrapi/compare/v1.8.0...v1.9.0) (2026-09-11)
 
 
