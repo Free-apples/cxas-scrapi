@@ -706,9 +706,7 @@ def app_init(args: argparse.Namespace) -> None:
                 continue
 
         if item.is_dir():
-            if dest.exists():
-                shutil.rmtree(dest)
-            shutil.copytree(item, dest)
+            shutil.copytree(item, dest, dirs_exist_ok=True)
         else:
             shutil.copy2(item, dest)
 
