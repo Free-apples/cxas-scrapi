@@ -23,6 +23,7 @@ cxas init [--target-dir DIR] [--force]
 - **`.claude/`** — Claude-specific configuration for using the skills via Claude Code.
 - **`.gemini/`** — Gemini-specific configuration.
 - **`.github/agents/`** — Subagent definitions for GitHub Copilot.
+- **`.github/hooks/`** — Hook registration for GitHub Copilot in VS Code.
 - **`AGENTS.md`** — Top-level instructions for AI agents working in this repository.
 
 The exact contents depend on the version of `cxas-scrapi` you have installed. You can inspect what was bundled at `{sys.prefix}/share/cxas-scrapi/skills/`.

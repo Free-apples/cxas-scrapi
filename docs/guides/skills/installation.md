@@ -40,7 +40,8 @@ your-project/
 │   ├── agents/                # Subagents, symlinked to the foundry skill
 │   └── settings.json          # Registers hooks with Gemini CLI
 ├── .github/
-│   └── agents/                # Subagents for GitHub Copilot
+│   ├── agents/                # Subagents for GitHub Copilot
+│   └── hooks/                 # Registers hooks with GitHub Copilot in VS Code
 └── AGENTS.md                  # Overview for the AI assistant
 ```
 
@@ -178,6 +179,13 @@ Similar configuration for Gemini CLI, using `BeforeTool`/`AfterTool` hooks with 
 Subagent definitions for GitHub Copilot in VS Code. These are the same files
 used by Claude Code and Gemini CLI — a single set of definitions lives in
 `.agents/skills/cxas-agent-foundry/agents/` and each harness reads from there.
+
+### `.github/hooks/`
+
+Registers the same hook scripts with GitHub Copilot in VS Code, using VS Code's
+native hook format. VS Code loads it automatically. Leave the
+`chat.useClaudeHooks` setting off: turning it on also loads
+`.claude/settings.json`, and each hook then runs twice.
 
 ### `AGENTS.md`
 
